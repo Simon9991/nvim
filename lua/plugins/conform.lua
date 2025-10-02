@@ -4,7 +4,7 @@ return {
 	cmd = { "ConformInfo" },
 	keys = {
 		{
-			"<leader>F3",
+			"<leader>fmt",
 			function()
 				require("conform").format({
 					async = true,
@@ -31,12 +31,12 @@ return {
 			-- Try Biome first, then Prettier as fallback
 			formatters_by_ft = {
 				lua = { "stylua" },
-				javascript = { "biome", "prettier" },
-				javascriptreact = { "biome", "prettier" },
-				typescript = { "biome", "prettier" },
-				typescriptreact = { "biome", "prettier" }, -- TSX
-				json = { "biome", "prettier" },
-				jsonc = { "biome", "prettier" },
+				javascript = { "prettier" },
+				javascriptreact = { "prettier" },
+				typescript = { "prettier" },
+				typescriptreact = { "prettier" },
+				json = { "prettier" },
+				jsonc = { "prettier" },
 				svelte = { "prettier" },
 				go = { "goimports", "gofmt" },
 				rust = { "rustfmt" },
@@ -44,12 +44,6 @@ return {
 			},
 
 			formatters = {
-				biome = {
-					command = "biome",
-					args = { "format", "--stdin-file-path", "$FILENAME" },
-					stdin = true,
-					prefer_local = "node_modules/.bin",
-				},
 				prettier = {
 					prefer_local = "node_modules/.bin",
 				},

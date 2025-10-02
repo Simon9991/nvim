@@ -1,7 +1,3 @@
-vim.lsp.config("*", {
-	root_markers = { ".git" },
-})
-
 vim.diagnostic.config({
 	virtual_text = true,
 	severity_sort = true,
@@ -120,20 +116,6 @@ vim.lsp.config["cssls"] = {
 	},
 }
 
-vim.lsp.config["phpls"] = {
-	cmd = { "intelephense", "--stdio" },
-	filetypes = { "php" },
-	root_markers = { "composer.json", ".git" },
-	capabilities = caps,
-	settings = {
-		intelephense = {
-			files = {
-				maxSize = 5000000, -- default 5MB
-			},
-		},
-	},
-}
-
 -- Rust --
 vim.lsp.config["rust-analyzer"] = {
 	capabilities = caps,
@@ -218,41 +200,7 @@ vim.lsp.config["ts_ls"] = {
 	end,
 }
 
--- Biome lsp
-vim.lsp.config["biome"] = {
-	-- prefer local node binary; fallback to global "biome"
-	cmd = function(dispatchers, _)
-		local buf = vim.api.nvim_get_current_buf()
-		local root = vim.fs.root(buf, { "package.json", "tsconfig.json", "jsconfig.json", ".git" }) or vim.loop.cwd()
-		local local_biome = root and (root .. "/node_modules/.bin/biome") or nil
-		local exe = (local_biome and vim.fn.executable(local_biome) == 1) and local_biome or "biome"
-		return vim.lsp.rpc.start({ exe, "lsp-proxy" }, dispatchers)
-	end,
-
-	filetypes = {
-		"javascript",
-		"javascriptreact",
-		"typescript",
-		"typescriptreact",
-		"json",
-		"jsonc",
-	},
-	init_options = {
-		typescript = { enabled = true },
-	},
-
-	-- keep root detection simple; biome can still find its config upward.
-	root_markers = { "biome.json", "biome.jsonc" },
-
-	capabilities = require("cmp_nvim_lsp").default_capabilities(),
-
-	-- let conform do formatting; biome still provides diagnostics/completion
-	on_attach = function(client, _)
-		client.server_capabilities.documentformattingprovider = false
-		client.server_capabilities.documentrangeformattingprovider = false
-	end,
-}
-
+-- OmniSharp setup --
 local function enable_semantic_tokens(client)
 	local p = client.server_capabilities
 	if p and p.semanticTokensProvider and not p.semanticTokensProvider.full then
@@ -272,20 +220,8 @@ local function csharp_root(bufnr)
 	return vim.fs.root(bufnr or 0, { ".git" }) or vim.loop.cwd()
 end
 
--- Pick the available OmniSharp binary
-local function omnisharp_cmd()
-	for _, exe in ipairs({ "omnisharp", "OmniSharp" }) do
-		if vim.fn.executable(exe) == 1 then
-			return { exe, "-lsp" }
-		end
-	end
-	vim.notify("OmniSharp not found on PATH", vim.log.levels.ERROR)
-	return nil
-end
-
-local _cmd = omnisharp_cmd()
 vim.lsp.config["omnisharp"] = {
-	cmd = _cmd,
+	cmd = { "OmniSharp", "-lsp" },
 	filetypes = { "cs", "vb" },
 	root_dir = csharp_root,
 	capabilities = caps,
@@ -342,12 +278,44 @@ vim.lsp.config["omnisharp"] = {
 	end,
 }
 
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "cs",
+	callback = function(args)
+		for _, c in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
+			if c.name == "omnisharp" then
+				return
+			end
+		end
+		local function root(buf)
+			local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(buf))
+			local hit = vim.fs.find(function(n)
+				return n:match("%.sln$") or n:match("%.csproj$")
+			end, { upward = true, path = dir })[1]
+			return (hit and vim.fs.dirname(hit)) or vim.fs.root(buf, { ".git" }) or vim.loop.cwd()
+		end
+
+		vim.lsp.start({
+			name = "omnisharp",
+			cmd = { "OmniSharp", "-lsp" },
+			root_dir = root(args.buf),
+			capabilities = require("cmp_nvim_lsp").default_capabilities(),
+			on_attach = function(client, bufnr)
+				-- keep formatting off; CSharpier (conform.nvim) handles it
+				client.server_capabilities.documentFormattingProvider = false
+				client.server_capabilities.documentRangeFormattingProvider = false
+			end,
+		})
+	end,
+})
+
+-- DEBUG
+vim.lsp.set_log_level("debug")
+
 vim.lsp.enable("luals")
 vim.lsp.enable("cssls")
 vim.lsp.enable("ts_ls")
 vim.lsp.enable("phpls")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust-analyzer")
-vim.lsp.enable("biome")
 vim.lsp.enable("svelte")
 vim.lsp.enable("omnisharp")
