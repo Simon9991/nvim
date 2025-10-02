@@ -65,6 +65,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			typescriptreact = true,
 			json = true,
 			jsonc = true,
+			cs = true,
 		}
 
 		local excluded_filetypes = { php = true }
@@ -252,6 +253,73 @@ vim.lsp.config["biome"] = {
 	end,
 }
 
+local function enable_semantic_tokens(client)
+	local p = client.server_capabilities
+	if p and p.semanticTokensProvider and not p.semanticTokensProvider.full then
+		p.semanticTokensProvider.full = true
+	end
+end
+
+vim.lsp.config["omnisharp"] = {
+	cmd = { "omnisharp", "-lsp" }, -- LSP mode
+	filetypes = { "cs", "vb" },
+	root_markers = { "*.sln", "*.csproj", ".git" },
+	capabilities = caps,
+	init_options = {
+		FormattingOptions = {
+			-- Let your general formatter run; if you want OmniSharp to format, set to true
+			EnableEditorConfigSupport = true,
+			OrganizeImports = true,
+		},
+		RoslynExtensionsOptions = {
+			EnableAnalyzersSupport = true,
+			EnableDecompilationSupport = true,
+			InlayHintsOptions = {
+				EnableForParameters = true,
+				ForLiteralParameters = true,
+				ForIndexerParameters = true,
+				ForOtherParameters = true,
+				SuppressForParametersThatDifferOnlyBySuffix = false,
+				SuppressForParametersThatMatchMethodIntent = false,
+				SuppressForParametersThatMatchArgumentName = false,
+			},
+		},
+		MarkdownOptions = {
+			SupportGitHubStyle = true,
+		},
+		MsBuild = {
+			-- Modern .NET (no Mono); helps on NixOS
+			UseModernNet = true,
+			-- Load projects faster; great for mono-repo or big trees
+			LoadProjectsOnDemand = true,
+		},
+	},
+
+	-- Minor fixups on attach
+	on_attach = function(client, bufnr)
+		enable_semantic_tokens(client)
+
+		-- If you prefer a dedicated formatter (e.g., csharpier via conform/null-ls),
+		-- keep server formatting off so it does not fight your formatter.
+		client.server_capabilities.documentFormattingProvider = false
+		client.server_capabilities.documentRangeFormattingProvider = false
+
+		-- Optional: organize imports on save (safe + fast in C#)
+		vim.api.nvim_create_autocmd("BufWritePre", {
+			group = vim.api.nvim_create_augroup("csharp.organize_imports", { clear = false }),
+			buffer = bufnr,
+			callback = function()
+				pcall(vim.lsp.buf.execute_command, {
+					command = "omnisharp/runCodeAction",
+					arguments = {
+						{ Identifier = "usingdirective_sort", WantsTextChanges = true, ApplyChanges = true },
+					},
+				})
+			end,
+		})
+	end,
+}
+
 vim.lsp.enable("luals")
 vim.lsp.enable("cssls")
 vim.lsp.enable("ts_ls")
@@ -260,3 +328,4 @@ vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust-analyzer")
 vim.lsp.enable("biome")
 vim.lsp.enable("svelte")
+vim.lsp.enable("omnisharp")

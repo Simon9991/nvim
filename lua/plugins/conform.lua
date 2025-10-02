@@ -9,7 +9,7 @@ return {
 				require("conform").format({
 					async = true,
 					lsp_format = "never",
-					stop_after_first = true, -- <— new way
+					stop_after_first = true,
 				})
 			end,
 			mode = { "n", "x" },
@@ -24,7 +24,7 @@ return {
 				return {
 					timeout_ms = 2000,
 					lsp_format = "never",
-					stop_after_first = true, -- only one formatter runs
+					stop_after_first = true,
 				}
 			end,
 
@@ -40,18 +40,23 @@ return {
 				svelte = { "prettier" },
 				go = { "goimports", "gofmt" },
 				rust = { "rustfmt" },
+				cs = { "csharpier" },
 			},
 
 			formatters = {
 				biome = {
 					command = "biome",
-					args = { "format", "--stdin-file-path", "$FILENAME" }, -- same as `biome format --write`
+					args = { "format", "--stdin-file-path", "$FILENAME" },
 					stdin = true,
-					prefer_local = "node_modules/.bin", -- uses project’s Biome if present
-					-- NOTE: no `cwd` and no `condition` — let Biome discover biome.json(c) itself
+					prefer_local = "node_modules/.bin",
 				},
 				prettier = {
 					prefer_local = "node_modules/.bin",
+				},
+				csharpier = {
+					command = "csharpier",
+					stdin = true,
+					args = { "--write-stdout" },
 				},
 			},
 		}
