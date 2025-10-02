@@ -260,16 +260,40 @@ local function enable_semantic_tokens(client)
 	end
 end
 
+-- Find solution/project root
+local function csharp_root(bufnr)
+	local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr or 0))
+	local hit = vim.fs.find(function(name)
+		return name:match("%.sln$") or name:match("%.csproj$")
+	end, { upward = true, path = dir })[1]
+	if hit then
+		return vim.fs.dirname(hit)
+	end
+	return vim.fs.root(bufnr or 0, { ".git" }) or vim.loop.cwd()
+end
+
+-- Pick the available OmniSharp binary
+local function omnisharp_cmd()
+	for _, exe in ipairs({ "omnisharp", "OmniSharp" }) do
+		if vim.fn.executable(exe) == 1 then
+			return { exe, "-lsp" }
+		end
+	end
+	vim.notify("OmniSharp not found on PATH", vim.log.levels.ERROR)
+	return nil
+end
+
+local _cmd = omnisharp_cmd()
 vim.lsp.config["omnisharp"] = {
-	cmd = { "omnisharp", "-lsp" }, -- LSP mode
+	cmd = _cmd,
 	filetypes = { "cs", "vb" },
-	root_markers = { "*.sln", "*.csproj", ".git" },
+	root_dir = csharp_root,
 	capabilities = caps,
 	init_options = {
 		FormattingOptions = {
-			-- Let your general formatter run; if you want OmniSharp to format, set to true
-			EnableEditorConfigSupport = true,
-			OrganizeImports = true,
+			-- Let general formatter run; for OmniSharp to format, set to true
+			EnableEditorConfigSupport = false,
+			OrganizeImports = false,
 		},
 		RoslynExtensionsOptions = {
 			EnableAnalyzersSupport = true,
@@ -299,12 +323,10 @@ vim.lsp.config["omnisharp"] = {
 	on_attach = function(client, bufnr)
 		enable_semantic_tokens(client)
 
-		-- If you prefer a dedicated formatter (e.g., csharpier via conform/null-ls),
-		-- keep server formatting off so it does not fight your formatter.
 		client.server_capabilities.documentFormattingProvider = false
 		client.server_capabilities.documentRangeFormattingProvider = false
 
-		-- Optional: organize imports on save (safe + fast in C#)
+		-- Optional: organize imports on save
 		vim.api.nvim_create_autocmd("BufWritePre", {
 			group = vim.api.nvim_create_augroup("csharp.organize_imports", { clear = false }),
 			buffer = bufnr,
