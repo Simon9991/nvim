@@ -34,6 +34,16 @@ return {
 			builtin.grep_string({ search = vim.fn.input("Grep > ") })
 		end)
 
+		vim.keymap.set("n", "<leader>gf", builtin.live_grep, { desc = "Live grep" })
+
+		vim.keymap.set("n", "<leader>fG", function()
+			builtin.live_grep({
+				additional_args = function()
+					return { "--hidden", "--glob", "!.git/*" }
+				end,
+			})
+		end, { desc = "Live grep (including hidden)" })
+
 		-- Find instance instance of current view being included
 		vim.keymap.set("n", "<leader>fc", function()
 			local filename_without_extension = vim.fn.expand("%:t:r")
