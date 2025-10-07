@@ -54,6 +54,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			vim.lsp.buf.format({ async = true })
 		end)
 		map("n", "<F4>", vim.lsp.buf.code_action)
+		map("n", "<leader>gs", vim.lsp.buf.code_action)
 		local conform_ft = {
 			javascript = true,
 			javascriptreact = true,
@@ -154,9 +155,6 @@ vim.lsp.config["nil_ls"] = {
 }
 
 -- Svelte --
--- Svelte (core LSP API, not lspconfig)
-local caps = require("cmp_nvim_lsp").default_capabilities()
-
 vim.lsp.config["svelte"] = {
 	cmd = { "svelteserver", "--stdio" }, -- Nix binary name
 	filetypes = { "svelte" },
@@ -197,6 +195,46 @@ vim.lsp.config["ts_ls"] = {
 	on_attach = function(client, bufnr)
 		client.server_capabilities.documentFormattingProvider = false
 		client.server_capabilities.documentRangeFormattingProvider = false
+	end,
+}
+
+-- Golang
+vim.lsp.config["gopls"] = {
+	cmd = { "gopls" },
+	filetypes = { "go", "gomod", "gowork", "gotmpl" },
+	root_markers = { "go.work", "go.mod", ".git" },
+	capabilities = caps,
+	settings = {
+		gopls = {
+			-- completions/UX
+			usePlaceholders = true,
+			completeUnimported = true,
+			-- static analysis
+			staticcheck = true,
+			analyses = {
+				unusedparams = true,
+				unusedwrite = true,
+				nilness = true,
+				shadow = true,
+			},
+			-- formatting (gopls formats + organizes imports)
+			gofumpt = true, -- stricter formatting style
+			-- Optional: hint overlays
+			hints = {
+				assignVariableTypes = true,
+				compositeLiteralFields = true,
+				compositeLiteralTypes = true,
+				constantValues = true,
+				parameterNames = true,
+				rangeVariableTypes = true,
+			},
+		},
+	},
+	on_attach = function(client, _)
+		-- Keep LSP formatting enabled for Go so your existing BufWritePre
+		-- autocmd will call `vim.lsp.buf.format(...)`.
+		client.server_capabilities.documentFormattingProvider = true
+		client.server_capabilities.documentRangeFormattingProvider = true
 	end,
 }
 
@@ -308,8 +346,95 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
--- DEBUG
-vim.lsp.set_log_level("debug")
+-- Ruff (Python linter & formatter)
+vim.lsp.config["ruff"] = {
+	cmd = { "ruff", "server" },
+	filetypes = { "python" },
+	root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile", ".git" },
+	capabilities = caps,
+	init_options = {
+		settings = {
+			-- Ruff language server settings
+			lineLength = 88,
+			lint = {
+				select = { "E", "F", "I" }, -- Enable pycodestyle, pyflakes, isort
+			},
+		},
+	},
+}
+
+-- BasedPyright (Python type checker)
+vim.lsp.config["basedpyright"] = {
+	cmd = { "basedpyright-langserver", "--stdio" },
+	filetypes = { "python" },
+	root_markers = {
+		"pyproject.toml",
+		"setup.py",
+		"setup.cfg",
+		"requirements.txt",
+		"Pipfile",
+		"pyrightconfig.json",
+		".git",
+	},
+	capabilities = caps,
+	single_file_support = true,
+	settings = {
+		basedpyright = {
+			analysis = {
+				typeCheckingMode = "standard", -- off, basic, standard, strict, all
+				autoSearchPaths = true,
+				useLibraryCodeForTypes = true,
+				autoImportCompletions = true,
+				diagnosticsMode = "openFilesOnly", -- workspace or openFilesOnly
+			},
+		},
+	},
+}
+
+-- Tailwindcss
+vim.lsp.config["tailwindcss"] = {
+	cmd = { "tailwindcss-language-server", "--stdio" },
+	filetypes = {
+		"html",
+		"css",
+		"scss",
+		"javascript",
+		"javascriptreact",
+		"typescript",
+		"typescriptreact",
+		"vue",
+		"svelte",
+		"astro",
+	},
+	root_markers = {
+		"tailwind.config.js",
+		"tailwind.config.cjs",
+		"tailwind.config.mjs",
+		"tailwind.config.ts",
+		"postcss.config.js",
+		"postcss.config.cjs",
+		"postcss.config.mjs",
+		"postcss.config.ts",
+		"package.json",
+		".git",
+	},
+	capabilities = caps,
+	settings = {
+		tailwindCSS = {
+			classAttributes = { "class", "className", "classList", "ngClass" },
+			lint = {
+				cssConflict = "warning",
+				invalidApply = "error",
+				invalidConfigPath = "error",
+				invalidScreen = "error",
+				invalidTailwindDirective = "error",
+				invalidVariant = "error",
+				recommendedVariantOrder = "warning",
+			},
+			validate = true,
+		},
+	},
+}
 
 vim.lsp.enable("luals")
 vim.lsp.enable("cssls")
@@ -319,3 +444,8 @@ vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust-analyzer")
 vim.lsp.enable("svelte")
 vim.lsp.enable("omnisharp")
+vim.lsp.enable("gopls")
+vim.lsp.enable("omnisharp")
+vim.lsp.enable("ruff")
+vim.lsp.enable("basedpyright")
+vim.lsp.enable("tailwindcss")
