@@ -51,6 +51,9 @@ return {
 					"astro",
 					"svelte",
 					"c_sharp",
+					"go",
+					"gomod",
+					"gowork",
 				},
 				-- auto install above language parsers
 				auto_install = false,

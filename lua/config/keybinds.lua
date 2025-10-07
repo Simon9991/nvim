@@ -1,72 +1,94 @@
--- KEYBINDS
+local keymap = vim.keymap
+
 vim.g.mapleader = " "
-vim.keymap.set("n", "<leader>cd", vim.cmd.Ex)
 
-vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv") -- Alt Up/Down in vscode
-vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
+-- Do things without affecting the registers
+keymap.set("n", "x", '"_x')
+keymap.set("n", "<Leader>p", '"0p', { desc = "Paste from yank register" })
+keymap.set("n", "<Leader>P", '"0P', { desc = "Paste before from yank register" })
+keymap.set("v", "<Leader>p", '"0p', { desc = "Paste from yank register" })
 
-vim.keymap.set("n", "J", "mzJ`z") -- Remap joining lines
-vim.keymap.set("n", "<C-d>", "<C-d>zz") -- Keep cursor in place while moving up/down page
-vim.keymap.set("n", "<C-u>", "<C-u>zz")
-vim.keymap.set("n", "n", "nzzzv") -- center screen when looping search results
-vim.keymap.set("n", "N", "Nzzzv")
-vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, { desc = "Go to definition" })
+-- Change operations (don't affect register)
+keymap.set("n", "<Leader>c", '"_c', { desc = "Change without register" })
+keymap.set("n", "<Leader>C", '"_C', { desc = "Change to EOL without register" })
+keymap.set("v", "<Leader>c", '"_c', { desc = "Change without register" })
+keymap.set("v", "<Leader>C", '"_C', { desc = "Change without register" })
 
--- paste and don't replace clipboard over deleted text
-vim.keymap.set("x", "<leader>p", [["_dP]])
-vim.keymap.set({ "n", "v" }, "<leader>d", [["_d]])
+-- Delete operations (don't affect register)
+keymap.set("n", "<Leader>d", '"_d', { desc = "Delete without register" })
+keymap.set("n", "<Leader>D", '"_D', { desc = "Delete to EOL without register" })
+keymap.set("v", "<Leader>d", '"_d', { desc = "Delete without register" })
+keymap.set("v", "<Leader>D", '"_D', { desc = "Delete without register" })
 
--- sometimes in insert mode, control-c doesn't exactly work like escape
-vim.keymap.set("i", "<C-c>", "<Esc>")
+-- Move lines up/down in visual mode
+keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move line down" })
+keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move line up" })
 
--- add binds for Control J/K to scroll thru quickfix list
-vim.keymap.set("n", "<C-j>", "<cmd>cnext<CR>zz")
-vim.keymap.set("n", "<C-k>", "<cmd>cprev<CR>zz")
+-- Better default behaviors
+keymap.set("n", "J", "mzJ`z", { desc = "Join lines, keep cursor position" })
+keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down, center" })
+keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up, center" })
+keymap.set("n", "n", "nzzzv", { desc = "Next search, center" })
+keymap.set("n", "N", "Nzzzv", { desc = "Prev search, center" })
 
--- What the heck is Ex mode?
-vim.keymap.set("n", "Q", "<nop>")
+-- Make Ctrl-C behave exactly like Escape
+keymap.set("i", "<C-c>", "<Esc>")
 
-vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
-vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
+-- Quickfix navigation (moved from <C-j>/<C-k> to free them for window nav)
+keymap.set("n", "<leader>cn", "<cmd>cnext<CR>zz", { desc = "Next quickfix" })
+keymap.set("n", "<leader>cp", "<cmd>cprev<CR>zz", { desc = "Prev quickfix" })
 
--- getting Alex off my back :)
-vim.keymap.set("n", "<leader>dg", "<cmd>DogeGenerate<cr>")
+-- Location list navigation
+keymap.set("n", "<leader>ln", "<cmd>lnext<CR>zz", { desc = "Next location" })
+keymap.set("n", "<leader>lp", "<cmd>lprev<CR>zz", { desc = "Prev location" })
 
--- lint / format php files for LC
-vim.keymap.set("n", "<leader>cc", "<cmd>!php-cs-fixer fix % --using-cache=no<cr>")
+-- Window navigation (your requested keybinds)
+keymap.set("n", "<leader>sh", "<C-w>h", { desc = "Move to left window" })
+keymap.set("n", "<leader>sj", "<C-w>j", { desc = "Move to bottom window" })
+keymap.set("n", "<leader>sk", "<C-w>k", { desc = "Move to top window" })
+keymap.set("n", "<leader>sl", "<C-w>l", { desc = "Move to right window" })
 
--- Replace all instances of whatever is under cursor (on line)
-vim.keymap.set("n", "<leader>s", [[:s/\<<C-r><C-w>\>//gI<Left><Left><Left>]])
+-- Disable Ex mode
+keymap.set("n", "Q", "<nop>")
 
--- make file executable
-vim.keymap.set("n", "<leader>xx", "<cmd>!chmod +x %<CR>", { silent = true })
+-- Replace all instances of word under cursor
+keymap.set("n", "<leader>s", [[:s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = "Replace word under cursor" })
 
--- yank into clipboard even if on ssh
-vim.keymap.set("n", "<leader>y", "<Plug>OSCYankOperator")
-vim.keymap.set("v", "<leader>y", "<Plug>OSCYankVisual")
+-- Make file executable
+keymap.set("n", "<leader>exc", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make file executable" })
 
--- reload without exiting vim
-vim.keymap.set("n", "<leader>rl", "<cmd>source ~/.config/nvim/init.lua<cr>")
+-- Clipboard yanking
+-- Normal y/p: uses default register (clipboard if clipboard=unnamedplus is set)
+-- <leader>y: forces OSC yank for SSH/remote scenarios
+keymap.set("n", "<leader>Y", "<Plug>OSCYankOperator", { desc = "OSC yank (for SSH)" })
+keymap.set("v", "<leader>Y", "<Plug>OSCYankVisual", { desc = "OSC yank (for SSH)" })
+keymap.set("n", "<leader>y", '"+y', { desc = "Yank to system clipboard" })
+keymap.set("v", "<leader>y", '"+y', { desc = "Yank to system clipboard" })
 
-vim.keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle)
+-- Reload config
+keymap.set("n", "<leader>rl", "<cmd>source ~/.config/nvim/init.lua<cr>", { desc = "Reload config" })
 
--- Quickfix list stuff
-vim.keymap.set("n", "<leader>cl", ":cclose<CR>", { silent = true })
-vim.keymap.set("n", "<leader>co", ":copen<CR>", { silent = true })
-vim.keymap.set("n", "<leader>cn", ":cnext<CR>zz")
-vim.keymap.set("n", "<leader>cp", ":cprev<CR>zz")
-vim.keymap.set("n", "<leader>li", ":checkhealth vim.lsp<CR>", { desc = "LSP Info" })
+-- Undotree
+keymap.set("n", "<leader>u", vim.cmd.UndotreeToggle, { desc = "Toggle undotree" })
 
--- source file
-vim.keymap.set("n", "<leader>sf", function()
-	vim.cmd("so")
-end)
+-- Markdown helpers
+keymap.set(
+	"n",
+	"<leader>da",
+	'<cmd>setlocal formatoptions-=a<cr><cmd>setlocal textwidth=0<cr><cmd>echo "Auto-wrapping disabled"<cr>',
+	{ desc = "Disable auto wrap" }
+)
+keymap.set(
+	"n",
+	"<leader>ea",
+	'<cmd>setlocal formatoptions+=a<cr><cmd>setlocal textwidth=80<cr><cmd>echo "Auto-wrapping enabled"<cr>',
+	{ desc = "Enable auto wrap" }
+)
 
--- oil setup
-vim.keymap.set("n", "<leader>-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
+keymap.set("v", "<leader>mb", "di****<esc>hhp", { desc = "Bold markdown" })
+keymap.set("v", "<leader>mi", "di**<esc>hp", { desc = "Italic markdown" })
+keymap.set("v", "<leader>ml", "di[]()<esc>hhhpllli", { desc = "Link markdown" })
+keymap.set("v", "<leader>mc", "di``<esc>hp", { desc = "Code markdown" })
 
--- markdown
-vim.keymap.set("v", "<leader>mb", "di****<esc>hhp", { desc = "Auto bold" })
-vim.keymap.set("v", "<leader>mi", "di**<esc>hp", { desc = "Auto italic" })
-vim.keymap.set("v", "<leader>ml", "di[]()<esc>hhhpllli", { desc = "Auto link" })
-vim.keymap.set("v", "<leader>mc", "di``<esc>hp", { desc = "Auto backtick" })
+-- Oil.nvim
+keymap.set("n", "<leader>-", "<CMD>Oil<CR>", { desc = "Open parent directory" })

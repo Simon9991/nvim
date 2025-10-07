@@ -22,7 +22,7 @@ return {
 
 			format_on_save = function()
 				return {
-					timeout_ms = 2000,
+					timeout_ms = 500,
 					lsp_format = "never",
 					stop_after_first = true,
 				}
