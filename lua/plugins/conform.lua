@@ -47,11 +47,6 @@ return {
 				prettier = {
 					prefer_local = "node_modules/.bin",
 				},
-				csharpier = {
-					command = "csharpier",
-					stdin = true,
-					args = { "--write-stdout" },
-				},
 			},
 		}
 	end,
