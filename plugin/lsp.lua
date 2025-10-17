@@ -42,14 +42,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 		-- Keymaps (use builtin LSP buffer functions)
 		map("n", "K", vim.lsp.buf.hover)
-		map("n", "gd", vim.lsp.buf.definition)
+		-- gd, gr, gi, gy handled by glance.nvim
 		map("n", "gD", vim.lsp.buf.declaration)
-		map("n", "gi", vim.lsp.buf.implementation)
-		map("n", "go", vim.lsp.buf.type_definition)
-		map("n", "gr", vim.lsp.buf.references)
 		map("n", "gs", vim.lsp.buf.signature_help)
 		map("n", "gl", vim.diagnostic.open_float)
-		map("n", "<F2>", vim.lsp.buf.rename)
+		-- <F2> handled by inc-rename.nvim
 		map({ "n", "x" }, "<F3>", function()
 			vim.lsp.buf.format({ async = true })
 		end)
