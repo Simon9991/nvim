@@ -239,6 +239,9 @@ vim.lsp.config["gopls"] = {
 }
 
 -- OmniSharp setup --
+-- Using FileType autocmd + vim.lsp.start() because C# projects need custom
+-- root detection logic (.sln/.csproj matching) that doesn't work reliably
+-- with vim.lsp.config's root_markers approach
 local function enable_semantic_tokens(client)
 	local p = client.server_capabilities
 	if p and p.semanticTokensProvider and not p.semanticTokensProvider.full then
@@ -246,84 +249,17 @@ local function enable_semantic_tokens(client)
 	end
 end
 
--- Find solution/project root
-local function csharp_root(bufnr)
-	local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(bufnr or 0))
-	local hit = vim.fs.find(function(name)
-		return name:match("%.sln$") or name:match("%.csproj$")
-	end, { upward = true, path = dir })[1]
-	if hit then
-		return vim.fs.dirname(hit)
-	end
-	return vim.fs.root(bufnr or 0, { ".git" }) or vim.loop.cwd()
-end
-
-vim.lsp.config["omnisharp"] = {
-	cmd = { "OmniSharp", "-lsp" },
-	filetypes = { "cs", "vb" },
-	root_dir = csharp_root,
-	capabilities = caps,
-	init_options = {
-		FormattingOptions = {
-			-- Let general formatter run; for OmniSharp to format, set to true
-			EnableEditorConfigSupport = false,
-			OrganizeImports = false,
-		},
-		RoslynExtensionsOptions = {
-			EnableAnalyzersSupport = true,
-			EnableDecompilationSupport = true,
-			InlayHintsOptions = {
-				EnableForParameters = true,
-				ForLiteralParameters = true,
-				ForIndexerParameters = true,
-				ForOtherParameters = true,
-				SuppressForParametersThatDifferOnlyBySuffix = false,
-				SuppressForParametersThatMatchMethodIntent = false,
-				SuppressForParametersThatMatchArgumentName = false,
-			},
-		},
-		MarkdownOptions = {
-			SupportGitHubStyle = true,
-		},
-		MsBuild = {
-			-- Modern .NET (no Mono); helps on NixOS
-			UseModernNet = true,
-			-- Load projects faster; great for mono-repo or big trees
-			LoadProjectsOnDemand = true,
-		},
-	},
-
-	-- Minor fixups on attach
-	on_attach = function(client, bufnr)
-		enable_semantic_tokens(client)
-
-		client.server_capabilities.documentFormattingProvider = false
-		client.server_capabilities.documentRangeFormattingProvider = false
-
-		-- Optional: organize imports on save
-		vim.api.nvim_create_autocmd("BufWritePre", {
-			group = vim.api.nvim_create_augroup("csharp.organize_imports", { clear = false }),
-			buffer = bufnr,
-			callback = function()
-				pcall(vim.lsp.buf.execute_command, {
-					command = "omnisharp/runCodeAction",
-					arguments = {
-						{ Identifier = "usingdirective_sort", WantsTextChanges = true, ApplyChanges = true },
-					},
-				})
-			end,
-		})
-	end,
-}
-
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "cs",
 	callback = function(args)
+		-- Don't start if OmniSharp is already attached
 		for _, c in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
 			if c.name == "omnisharp" then
 				return
 			end
 		end
+
+		-- Find .sln or .csproj to determine project root
 		local function root(buf)
 			local dir = vim.fs.dirname(vim.api.nvim_buf_get_name(buf))
 			local hit = vim.fs.find(function(n)
@@ -336,11 +272,53 @@ vim.api.nvim_create_autocmd("FileType", {
 			name = "omnisharp",
 			cmd = { "OmniSharp", "-lsp" },
 			root_dir = root(args.buf),
-			capabilities = require("cmp_nvim_lsp").default_capabilities(),
+			capabilities = caps,
+			init_options = {
+				FormattingOptions = {
+					EnableEditorConfigSupport = false,
+					OrganizeImports = false,
+				},
+				RoslynExtensionsOptions = {
+					EnableAnalyzersSupport = true,
+					EnableDecompilationSupport = true,
+					InlayHintsOptions = {
+						EnableForParameters = true,
+						ForLiteralParameters = true,
+						ForIndexerParameters = true,
+						ForOtherParameters = true,
+						SuppressForParametersThatDifferOnlyBySuffix = false,
+						SuppressForParametersThatMatchMethodIntent = false,
+						SuppressForParametersThatMatchArgumentName = false,
+					},
+				},
+				MarkdownOptions = {
+					SupportGitHubStyle = true,
+				},
+				MsBuild = {
+					UseModernNet = true,
+					LoadProjectsOnDemand = true,
+				},
+			},
 			on_attach = function(client, bufnr)
-				-- keep formatting off; CSharpier (conform.nvim) handles it
+				enable_semantic_tokens(client)
+
+				-- CSharpier (conform.nvim) handles formatting
 				client.server_capabilities.documentFormattingProvider = false
 				client.server_capabilities.documentRangeFormattingProvider = false
+
+				-- Organize imports on save
+				vim.api.nvim_create_autocmd("BufWritePre", {
+					group = vim.api.nvim_create_augroup("csharp.organize_imports", { clear = false }),
+					buffer = bufnr,
+					callback = function()
+						pcall(vim.lsp.buf.execute_command, {
+							command = "omnisharp/runCodeAction",
+							arguments = {
+								{ Identifier = "usingdirective_sort", WantsTextChanges = true, ApplyChanges = true },
+							},
+						})
+					end,
+				})
 			end,
 		})
 	end,
@@ -442,9 +420,7 @@ vim.lsp.enable("ts_ls")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust-analyzer")
 vim.lsp.enable("svelte")
-vim.lsp.enable("omnisharp")
 vim.lsp.enable("gopls")
-vim.lsp.enable("omnisharp")
 vim.lsp.enable("ruff")
 vim.lsp.enable("basedpyright")
 vim.lsp.enable("tailwindcss")
