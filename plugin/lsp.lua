@@ -118,26 +118,27 @@ vim.lsp.config["cssls"] = {
 }
 
 -- Rust --
-vim.lsp.config["rust-analyzer"] = {
-	capabilities = caps,
-	cmd = { "rust-analyzer" },
-	filetypes = { "rust" },
-	root_markers = { "Cargo.toml", ".git" },
-	single_file_support = true,
-	settings = {
-		["rust-analyzer"] = {
-			diagnostics = {
-				enable = true,
-			},
-		},
-	},
-	before_init = function(init_params, config)
-		-- See https://github.com/rust-lang/rust-analyzer/blob/eb5da56d839ae0a9e9f50774fa3eb78eb0964550/docs/dev/lsp-extensions.md?plain=1#L26
-		if config.settings and config.settings["rust-analyzer"] then
-			init_params.initializationOptions = config.settings["rust-analyzer"]
-		end
-	end,
-}
+-- NOTE: Rust LSP is handled by rustaceanvim plugin, not here
+-- vim.lsp.config["rust-analyzer"] = {
+-- 	capabilities = caps,
+-- 	cmd = { "rust-analyzer" },
+-- 	filetypes = { "rust" },
+-- 	root_markers = { "Cargo.toml", ".git" },
+-- 	single_file_support = true,
+-- 	settings = {
+-- 		["rust-analyzer"] = {
+-- 			diagnostics = {
+-- 				enable = true,
+-- 			},
+-- 		},
+-- 	},
+-- 	before_init = function(init_params, config)
+-- 		-- See https://github.com/rust-lang/rust-analyzer/blob/eb5da56d839ae0a9e9f50774fa3eb78eb0964550/docs/dev/lsp-extensions.md?plain=1#L26
+-- 		if config.settings and config.settings["rust-analyzer"] then
+-- 			init_params.initializationOptions = config.settings["rust-analyzer"]
+-- 		end
+-- 	end,
+-- }
 
 -- Nix LSP (nil)
 vim.lsp.config["nil_ls"] = {
@@ -418,7 +419,7 @@ vim.lsp.enable("luals")
 vim.lsp.enable("cssls")
 vim.lsp.enable("ts_ls")
 vim.lsp.enable("nil_ls")
-vim.lsp.enable("rust-analyzer")
+-- rust-analyzer is handled by rustaceanvim plugin
 vim.lsp.enable("svelte")
 vim.lsp.enable("gopls")
 vim.lsp.enable("ruff")
