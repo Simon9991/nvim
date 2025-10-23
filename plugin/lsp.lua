@@ -303,20 +303,6 @@ vim.api.nvim_create_autocmd("FileType", {
 				-- CSharpier (conform.nvim) handles formatting
 				client.server_capabilities.documentFormattingProvider = false
 				client.server_capabilities.documentRangeFormattingProvider = false
-
-				-- Organize imports on save
-				vim.api.nvim_create_autocmd("BufWritePre", {
-					group = vim.api.nvim_create_augroup("csharp.organize_imports", { clear = false }),
-					buffer = bufnr,
-					callback = function()
-						pcall(vim.lsp.buf.execute_command, {
-							command = "omnisharp/runCodeAction",
-							arguments = {
-								{ Identifier = "usingdirective_sort", WantsTextChanges = true, ApplyChanges = true },
-							},
-						})
-					end,
-				})
 			end,
 		})
 	end,
