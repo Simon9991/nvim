@@ -21,16 +21,19 @@ local function reformat_parenthesized_content()
         return
     end
 
+    local indent = string.rep(" ", vim.bo.shiftwidth)
+    local double_indent = string.rep(" ", vim.bo.shiftwidth * 2)
+
     local new_lines = {}
     table.insert(new_lines, prefix .. "(")
     for i, part in ipairs(parts) do
         if i < #parts then
-            table.insert(new_lines, "        " .. part .. ",")
+            table.insert(new_lines, double_indent .. part .. ",")
         else
-            table.insert(new_lines, "        " .. part)
+            table.insert(new_lines, double_indent .. part)
         end
     end
-    table.insert(new_lines, "    )" .. suffix)
+    table.insert(new_lines, indent .. ")" .. suffix)
 
     vim.api.nvim_buf_set_lines(bufnr, row - 1, row, false, new_lines)
 end

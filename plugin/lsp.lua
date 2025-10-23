@@ -40,6 +40,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			vim.keymap.set(mode, lhs, rhs, { buffer = buf })
 		end
 
+		-- Attach nvim-navic for LSP context (used by barbecue.nvim)
+		if client.server_capabilities.documentSymbolProvider then
+			local ok_navic, navic = pcall(require, "nvim-navic")
+			if ok_navic then
+				navic.attach(client, buf)
+			end
+		end
+
 		-- Keymaps (use builtin LSP buffer functions)
 		map("n", "K", vim.lsp.buf.hover)
 		-- gd, gr, gi, gy handled by glance.nvim

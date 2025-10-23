@@ -52,7 +52,7 @@ keymap.set("n", "<leader>sl", "<C-w>l", { desc = "Move to right window" })
 keymap.set("n", "Q", "<nop>")
 
 -- Replace all instances of word under cursor
-keymap.set("n", "<leader>s", [[:s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = "Replace word under cursor" })
+keymap.set("n", "<leader>sr", [[:s/\<<C-r><C-w>\>//gI<Left><Left><Left>]], { desc = "Replace word under cursor" })
 
 -- Make file executable
 keymap.set("n", "<leader>exc", "<cmd>!chmod +x %<CR>", { silent = true, desc = "Make file executable" })
